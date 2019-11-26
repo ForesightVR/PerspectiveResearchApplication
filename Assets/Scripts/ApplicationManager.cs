@@ -21,11 +21,15 @@ public class ApplicationManager : MonoBehaviour
     [Space, Header("End Page")]
     public GameObject endPage;
     public TextMeshProUGUI warning;
+    public GameObject questOnlinePanel;
+    public TextMeshProUGUI waitingText;
 
     const string MISSING_ID = "One or more userIDs were left empty!";
     const string DUPLICATE_ID = "One or more users have duplicate userIDs!";
 
     List<PageInfo> pageInfos = new List<PageInfo>();
+    Dictionary<string, bool> questsOnline = new Dictionary<string, bool>();
+
     int pageIndex;
 
     public void SetNumberOfTesters()
@@ -49,12 +53,6 @@ public class ApplicationManager : MonoBehaviour
 
             Next();
         }
-    }
-
-    private void Update()
-    {
-        print(pageIndex);
-        print(pageInfos.Count);
     }
 
     public void Next()
@@ -123,8 +121,54 @@ public class ApplicationManager : MonoBehaviour
 
     public void BeginExperience()
     {
+        endPage.SetActive(false);
+        foreach(PageInfo pageInfo in pageInfos)
+            questsOnline.Add(pageInfo.questID, false);
+
+        waitingText.text = $"(0/{questsOnline.Count}) Quests Online. ";
+        questOnlinePanel.SetActive(true);
+        StartCoroutine(WaitForCallback());
+    }
+
+    IEnumerator WaitForCallback()
+    {
+        int dotCounter = 0;
+        for (; ; )
+        {
+            yield return new WaitForSeconds(1);
+
+            //Read from google sheets here
+
+            int count = 0;
+            foreach(KeyValuePair<string, bool> keyValuePair in questsOnline)
+            {
+                if (keyValuePair.Value)
+                    count++;
+            }
+
+            dotCounter = dotCounter.IncrementLoop(2);
+
+            switch (dotCounter)
+            {
+                case 0:
+                    waitingText.text = $"({count}/{questsOnline.Count}) Quests Online. ";
+                    break;
+                case 1:
+                    waitingText.text = $"({count}/{questsOnline.Count}) Quests Online.. ";
+                    break;
+                case 2:
+                    waitingText.text = $"({count}/{questsOnline.Count}) Quests Online... ";
+                    break;
+            }
+
+            print(dotCounter);
+            if (!questsOnline.ContainsValue(false))
+                break;
+        }
+
         pageInfos.Clear();
-        Debug.Log("Start");
+        questOnlinePanel.SetActive(false);
+        startPage.SetActive(true);
     }
 }
 

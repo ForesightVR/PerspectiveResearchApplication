@@ -24,7 +24,7 @@ namespace Michsky.UI.ModernUIPack
             switchAnimator = gameObject.GetComponent<Animator>();
             switchButton = gameObject.GetComponent<Button>();
             switchButton.onClick.AddListener(AnimateSwitch);
-
+            SetSwitch(true);
             //if (saveValue == true)
             //{
             //    if (PlayerPrefs.GetString(switchTag + "Switch") == "")
