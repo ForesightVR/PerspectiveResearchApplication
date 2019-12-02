@@ -71,10 +71,5 @@ namespace Michsky.UI.ModernUIPack
                 currentText.font = UIManagerAsset.inputFieldFont;
             }
         }
-
-        public void OpenNumPad()
-        {
-            TouchScreenKeyboard.Open("", TouchScreenKeyboardType.NumberPad, false, false, true, false);
-        }
     }
 }

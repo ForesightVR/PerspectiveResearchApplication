@@ -9,8 +9,10 @@ using TMPro;
 
 public class keyboardClass : MonoBehaviour, ISelectHandler {
 
+    public string promptHeader;
+
 	[DllImport("__Internal")]
-	private static extern void focusHandleAction (string _name, string _str);
+	private static extern void focusHandleAction (string _name, string _str, string _promptHeader);
 
 	public void ReceiveInputData(string value) {
 		gameObject.GetComponent<TMP_InputField> ().text = value;
@@ -19,7 +21,7 @@ public class keyboardClass : MonoBehaviour, ISelectHandler {
 	public void OnSelect(BaseEventData data) {
 		#if UNITY_WEBGL
 		try{
-			focusHandleAction (gameObject.name, gameObject.GetComponent<TMP_InputField> ().text);
+			focusHandleAction (gameObject.name, gameObject.GetComponent<TMP_InputField> ().text, promptHeader);
 		}
 		catch(Exception error){}
 		#endif
