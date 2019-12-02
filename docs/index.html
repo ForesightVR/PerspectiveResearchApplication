@@ -13,7 +13,18 @@
     </script>
   </head>
   <body>
-    <div class="webgl-content">
+    <script>
+		function FixInputOnSubmit() {
+			document.getElementById("fixInput").blur();
+			event.preventDefault();
+		}
+	</script>
+    <div>
+		<form onsubmit="FixInputOnSubmit()" autocomplete="off" style="width: 0px; height: 0px; position: absolute; top: -9999px;">
+			<input type="text" id="fixInput" oninput="gameInstance.Module.ccall('FixInputUpdate', null)" onblur="gameInstance.Module.ccall('FixInputOnBlur', null)" style="font-size: 42px;">
+		</form>
+	</div>
+	<div class="webgl-content">
       <div id="unityContainer" style="width: 960px; height: 600px"></div>
       <div class="footer">
         <div class="webgl-logo"></div>
