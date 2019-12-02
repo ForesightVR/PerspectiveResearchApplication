@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.Net;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -26,11 +27,20 @@ public class ApplicationManager : MonoBehaviour
 
     const string MISSING_ID = "One or more userIDs were left empty!";
     const string DUPLICATE_ID = "One or more users have duplicate userIDs!";
+    const string URL = "ftp://ftpupload.net/htdocs/ProjectPerspective/appControl.json";
+    NetworkCredential credential = new NetworkCredential("epiz_24876763", "Wr6f38F0XBubb");
 
-    List<PageInfo> pageInfos = new List<PageInfo>();
+    List<UserInfo> pageInfos = new List<UserInfo>();
     Dictionary<string, bool> questsOnline = new Dictionary<string, bool>();
 
     int pageIndex;
+    TestGroup data;
+    bool canStart;
+
+    private void Start()
+    {
+        Get();
+    }
 
     public void SetNumberOfTesters()
     {
@@ -47,7 +57,7 @@ public class ApplicationManager : MonoBehaviour
             }
             for (int i = pageInfos.Count; i < numberOfTester; i++)
             {
-                pageInfos.Add(new PageInfo());
+                pageInfos.Add(new UserInfo());
                 pageInfos[i].questID = "Oculus Quest " + (i + 1);
             }
 
@@ -75,6 +85,7 @@ public class ApplicationManager : MonoBehaviour
         {
             pageInfos[pageIndex - 1].userID = userIDField.text;
             pageInfos[pageIndex - 1].groupID = groupIDField.isOn ? "A" : "B";
+            pageInfos[pageIndex - 1].questReady = false;
         }
     }
 
@@ -96,7 +107,7 @@ public class ApplicationManager : MonoBehaviour
 
         if(endPage.activeInHierarchy)
         {
-            foreach(PageInfo pageInfo in pageInfos)
+            foreach(UserInfo pageInfo in pageInfos)
             {
                 if (pageInfo.userID == "")
                 {
@@ -105,7 +116,7 @@ public class ApplicationManager : MonoBehaviour
                     break;
                 }
 
-                foreach(PageInfo _pageInfo in pageInfos)
+                foreach(UserInfo _pageInfo in pageInfos)
                 {
                     if (pageInfo != _pageInfo && pageInfo.userID == _pageInfo.userID)
                     {
@@ -121,8 +132,10 @@ public class ApplicationManager : MonoBehaviour
 
     public void BeginExperience()
     {
+        canStart = true;
+        Post();
         endPage.SetActive(false);
-        foreach(PageInfo pageInfo in pageInfos)
+        foreach(UserInfo pageInfo in pageInfos)
             questsOnline.Add(pageInfo.questID, false);
 
         waitingText.text = $"(0/{questsOnline.Count}) Quests Online. ";
@@ -138,6 +151,13 @@ public class ApplicationManager : MonoBehaviour
             yield return new WaitForSeconds(1);
 
             //Read from google sheets here
+            Get();
+
+            foreach(UserInfo user in data.users)
+            {
+                if (questsOnline[user.questID] != true)
+                    questsOnline[user.questID] = user.questReady;
+            }
 
             int count = 0;
             foreach(KeyValuePair<string, bool> keyValuePair in questsOnline)
@@ -161,20 +181,73 @@ public class ApplicationManager : MonoBehaviour
                     break;
             }
 
-            print(dotCounter);
             if (!questsOnline.ContainsValue(false))
                 break;
         }
 
-        pageInfos.Clear();
+        Reset();
         questOnlinePanel.SetActive(false);
         startPage.SetActive(true);
     }
+
+    void Get()
+    {
+        WebClient request = new WebClient();
+        request.Credentials = credential;
+        try
+        {
+            byte[] newFileData = request.DownloadData(URL);
+            string fileString = System.Text.Encoding.UTF8.GetString(newFileData);
+            data = JsonUtility.FromJson(fileString, typeof(TestGroup)) as TestGroup;
+        }
+        catch (WebException e)
+        {
+            Debug.LogError(e.Message);
+        }
+    }
+
+    void Post()
+    {
+        WebClient client = new WebClient();
+        client.Credentials = credential;
+        client.Headers[HttpRequestHeader.ContentType] = "application/json";
+        try
+        {
+            string jsonData = JsonUtility.ToJson(new TestGroup {canStart = canStart, users = pageInfos });
+            client.UploadString(URL, jsonData);
+        }
+        catch (WebException e)
+        {
+            Debug.LogError(e.Message);
+        }
+    }
+
+    private void Reset()
+    {
+        questsOnline.Clear();
+        pageInfos.Clear();
+        canStart = false;
+        Post();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Reset();
+    }
 }
 
-class PageInfo
+[Serializable]
+public class TestGroup
+{
+    public bool canStart;
+    public List<UserInfo> users;
+}
+
+[Serializable]
+public class UserInfo
 {
     public string questID;
     public string userID;
     public string groupID;
+    public bool questReady;
 }
