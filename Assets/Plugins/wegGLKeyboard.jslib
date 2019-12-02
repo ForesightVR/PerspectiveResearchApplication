@@ -1,7 +1,7 @@
 ﻿mergeInto(LibraryManager.library, {
     focusHandleAction: function(_name, _str){
         if(UnityLoader.SystemInfo.mobile == true){
-            var _inputTextData = prompt("How many testers?", Pointer_stringify(_str));
+            var _inputTextData = prompt("", Pointer_stringify(_str));
             if (_inputTextData == null || _inputTextData == "") {
                 //canceled text
             } else {
