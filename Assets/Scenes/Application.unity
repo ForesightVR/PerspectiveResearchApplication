@@ -7621,8 +7621,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TextField: {fileID: 609125802}
-  RusLayoutSml: {fileID: 0}
-  RusLayoutBig: {fileID: 0}
   EngLayoutSml: {fileID: 2452114810753956877}
   EngLayoutBig: {fileID: 2452114811760593446}
   SymbLayout: {fileID: 2452114811396726633}
@@ -14353,7 +14351,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!222 &2452114811396726634
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -16583,7 +16581,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2452114811760593448
 MonoBehaviour:
   m_ObjectHideFlags: 0
