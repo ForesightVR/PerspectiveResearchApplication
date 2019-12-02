@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Runtime.InteropServices;
-using TMPro;
 
 namespace WebGLKeyboard
 {
@@ -29,6 +28,8 @@ namespace WebGLKeyboard
         [DllImport("__Internal")]
         private static extern void FixInputUpdate();
 
+        Transform parent;
+
         void OnEnable()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -37,6 +38,12 @@ namespace WebGLKeyboard
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
         }
+
+        private void Awake()
+        {
+            parent = transform.parent;
+        }
+
         private void Start()
         {
             PadronizeObjectName();
@@ -44,6 +51,8 @@ namespace WebGLKeyboard
             OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
 
             DontDestroyOnLoad(gameObject);
+            transform.parent = parent;
+            GetComponent<RectTransform>().anchoredPosition = Vector3.zero;
         }
         /// <summary>
         /// Changes this object name and parent to guarantee that it will be accessible from the outside javascript functions
