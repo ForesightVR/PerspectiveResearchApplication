@@ -135,7 +135,7 @@ public class ApplicationManager : MonoBehaviour
     public void BeginExperience()
     {
         canStart = true;
-     //   Post();
+        Post();
         endPage.SetActive(false);
         foreach (UserInfo pageInfo in pageInfos)
         {
@@ -156,7 +156,7 @@ public class ApplicationManager : MonoBehaviour
             yield return new WaitForSeconds(1);
 
             //Read from google sheets here
-           // Get();
+            Get();
 
             foreach(UserInfo user in data.users)
             {
@@ -217,7 +217,7 @@ public class ApplicationManager : MonoBehaviour
         pageInfos.Clear();
         canStart = false;
         pageIndex = 0;
-      //  Post();
+        Post();
     }
 
     private void OnApplicationQuit()
