@@ -1,7 +1,7 @@
-﻿using System.Net;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using TMPro;
 using Michsky.UI.ModernUIPack;
 using System;
@@ -28,8 +28,8 @@ public class ApplicationManager : MonoBehaviour
 
     const string MISSING_ID = "One or more userIDs were left empty!";
     const string DUPLICATE_ID = "One or more users have duplicate userIDs!";
-    const string URL = "ftp://ftpupload.net/htdocs/ProjectPerspective/appControl.json";
-    NetworkCredential credential = new NetworkCredential("epiz_24876763", "Wr6f38F0XBubb");
+    const string URL = "ftp://epiz_24876763:Wr6f38F0XBubb@ftpupload.net/htdocs/ProjectPerspective/appControl.json";
+    //NetworkCredential credential = new NetworkCredential("epiz_24876763", "Wr6f38F0XBubb");
 
     List<UserInfo> pageInfos = new List<UserInfo>();
     Dictionary<int, bool> questsOnline = new Dictionary<int, bool>();
@@ -41,7 +41,7 @@ public class ApplicationManager : MonoBehaviour
 
     private void Start()
     {
-        //Get();
+        StartCoroutine(Get());
     }
 
     public void SetNumberOfTesters()
@@ -135,7 +135,7 @@ public class ApplicationManager : MonoBehaviour
     public void BeginExperience()
     {
         canStart = true;
-     //   Post();
+        //Post();
         endPage.SetActive(false);
         foreach (UserInfo pageInfo in pageInfos)
         {
@@ -156,7 +156,7 @@ public class ApplicationManager : MonoBehaviour
             yield return new WaitForSeconds(1);
 
             //Read from google sheets here
-           // Get();
+            //Get();
 
             if (data == null) yield break;
             foreach(UserInfo user in data.users)
@@ -177,37 +177,51 @@ public class ApplicationManager : MonoBehaviour
         startPage.SetActive(true);
     }
 
-    void Get()
+    IEnumerator Get()
     {
-        WebClient request = new WebClient();
-        request.Credentials = credential;
-        try
+        //string authorization = Authenticate();
+        UnityWebRequest www = UnityWebRequest.Get(URL);
+        //Debug.Log(authorization);
+        //www.SetRequestHeader("AUTHORIZATION", authorization);
+
+        yield return www.SendWebRequest();
+
+        if (www.isNetworkError)
+            Debug.LogError("Error while receiving: " + www.error);
+        else
         {
-            byte[] newFileData = request.DownloadData(URL);
+            byte[] newFileData = www.downloadHandler.data;
             string fileString = System.Text.Encoding.UTF8.GetString(newFileData);
             data = JsonUtility.FromJson(fileString, typeof(TestGroup)) as TestGroup;
-        }
-        catch (WebException e)
-        {
-            Debug.LogError(e.Message);
+            Debug.Log("canstart: " + data.canStart);
         }
     }
 
-    void Post()
-    {
-        WebClient client = new WebClient();
-        client.Credentials = credential;
-        client.Headers[HttpRequestHeader.ContentType] = "application/json";
-        try
-        {
-            string jsonData = JsonUtility.ToJson(new TestGroup { canStart = canStart, users = pageInfos });
-            client.UploadString(URL, jsonData);
-        }
-        catch (WebException e)
-        {
-            Debug.LogError(e.Message);
-        }
-    }
+    //IEnumerator Post()
+    //{
+    //    WebClient client = new WebClient();
+    //    client.Credentials = credential;
+    //    client.Headers[HttpRequestHeader.ContentType] = "application/json";
+    //    try
+    //    {
+    //        string jsonData = JsonUtility.ToJson(new TestGroup { canStart = canStart, users = pageInfos });
+    //        client.UploadString(URL, jsonData);
+    //    }
+    //    catch (WebException e)
+    //    {
+    //        Debug.LogError(e.Message);
+    //    }
+
+    //    yield break;
+    //}
+
+    //string Authenticate()
+    //{
+    //    string auth = credential.UserName + ":" + credential.Password;
+    //    auth = Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(auth));
+    //    auth = "Basic " + auth;
+    //    return auth;
+    //}
 
     private void Reset()
     {
@@ -218,7 +232,7 @@ public class ApplicationManager : MonoBehaviour
         pageInfos.Clear();
         canStart = false;
         pageIndex = 0;
-      //  Post();
+        //Post();
     }
 
     private void OnApplicationQuit()
