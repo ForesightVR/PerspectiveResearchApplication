@@ -39,11 +39,6 @@ public class ApplicationManager : MonoBehaviour
     TestGroup data;
     bool canStart;
 
-    private void Start()
-    {
-        StartCoroutine(Get());
-    }
-
     public void SetNumberOfTesters()
     {
         if (int.TryParse(testerCountField.text, out int numberOfTester))
@@ -135,7 +130,7 @@ public class ApplicationManager : MonoBehaviour
     public void BeginExperience()
     {
         canStart = true;
-        //Post();
+        StartCoroutine(Post());
         endPage.SetActive(false);
         foreach (UserInfo pageInfo in pageInfos)
         {
@@ -156,7 +151,7 @@ public class ApplicationManager : MonoBehaviour
             yield return new WaitForSeconds(1);
 
             //Read from google sheets here
-            //Get();
+            StartCoroutine(Get());
 
             if (data == null) yield break;
             foreach(UserInfo user in data.users)
@@ -179,10 +174,7 @@ public class ApplicationManager : MonoBehaviour
 
     IEnumerator Get()
     {
-        //string authorization = Authenticate();
         UnityWebRequest www = UnityWebRequest.Get(URL);
-        //Debug.Log(authorization);
-        //www.SetRequestHeader("AUTHORIZATION", authorization);
 
         yield return www.SendWebRequest();
 
@@ -193,8 +185,19 @@ public class ApplicationManager : MonoBehaviour
             byte[] newFileData = www.downloadHandler.data;
             string fileString = System.Text.Encoding.UTF8.GetString(newFileData);
             data = JsonUtility.FromJson(fileString, typeof(TestGroup)) as TestGroup;
-            Debug.Log("canstart: " + data.canStart);
         }
+    }
+
+    IEnumerator Post()
+    {
+        string jsonData = JsonUtility.ToJson(new TestGroup { canStart = canStart, users = pageInfos });
+        UnityWebRequest www = UnityWebRequest.Put(URL, jsonData);
+        www.SetRequestHeader("Content-Type", "application/json");
+
+        yield return www.SendWebRequest();
+
+        if (www.isNetworkError)
+            Debug.LogError("Error while sending: " + www.error);
     }
 
     //IEnumerator Post()
@@ -215,14 +218,6 @@ public class ApplicationManager : MonoBehaviour
     //    yield break;
     //}
 
-    //string Authenticate()
-    //{
-    //    string auth = credential.UserName + ":" + credential.Password;
-    //    auth = Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(auth));
-    //    auth = "Basic " + auth;
-    //    return auth;
-    //}
-
     private void Reset()
     {
         questsOnline.Clear();
@@ -232,7 +227,7 @@ public class ApplicationManager : MonoBehaviour
         pageInfos.Clear();
         canStart = false;
         pageIndex = 0;
-        //Post();
+        StartCoroutine(Post());
     }
 
     private void OnApplicationQuit()
