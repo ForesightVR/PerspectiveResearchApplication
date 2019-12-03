@@ -41,7 +41,7 @@ public class ApplicationManager : MonoBehaviour
 
     private void Start()
     {
-        Get();
+        //Get();
     }
 
     public void SetNumberOfTesters()
@@ -135,7 +135,7 @@ public class ApplicationManager : MonoBehaviour
     public void BeginExperience()
     {
         canStart = true;
-        Post();
+     //   Post();
         endPage.SetActive(false);
         foreach (UserInfo pageInfo in pageInfos)
         {
@@ -156,7 +156,7 @@ public class ApplicationManager : MonoBehaviour
             yield return new WaitForSeconds(1);
 
             //Read from google sheets here
-            Get();
+           // Get();
 
             if (data == null) yield break;
             foreach(UserInfo user in data.users)
@@ -200,7 +200,7 @@ public class ApplicationManager : MonoBehaviour
         client.Headers[HttpRequestHeader.ContentType] = "application/json";
         try
         {
-            string jsonData = JsonUtility.ToJson(new TestGroup {canStart = canStart, users = pageInfos });
+            string jsonData = JsonUtility.ToJson(new TestGroup { canStart = canStart, users = pageInfos });
             client.UploadString(URL, jsonData);
         }
         catch (WebException e)
@@ -218,7 +218,7 @@ public class ApplicationManager : MonoBehaviour
         pageInfos.Clear();
         canStart = false;
         pageIndex = 0;
-        Post();
+      //  Post();
     }
 
     private void OnApplicationQuit()
