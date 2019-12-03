@@ -158,6 +158,7 @@ public class ApplicationManager : MonoBehaviour
             //Read from google sheets here
             Get();
 
+            if (data == null) yield break;
             foreach(UserInfo user in data.users)
             {
                 if (questsOnline[user.questID] != true)
