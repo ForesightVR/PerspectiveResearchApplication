@@ -23,7 +23,8 @@ public class ApplicationManager : MonoBehaviour
     public GameObject endPage;
     public TextMeshProUGUI warning;
     public GameObject questOnlinePanel;
-    public TextMeshProUGUI waitingText;
+    public Transform iconParent;
+    public HeadsetIconManager iconPrefab;
 
     const string MISSING_ID = "One or more userIDs were left empty!";
     const string DUPLICATE_ID = "One or more users have duplicate userIDs!";
@@ -31,7 +32,8 @@ public class ApplicationManager : MonoBehaviour
     NetworkCredential credential = new NetworkCredential("epiz_24876763", "Wr6f38F0XBubb");
 
     List<UserInfo> pageInfos = new List<UserInfo>();
-    Dictionary<string, bool> questsOnline = new Dictionary<string, bool>();
+    Dictionary<int, bool> questsOnline = new Dictionary<int, bool>();
+    List<HeadsetIconManager> headsetIcons = new List<HeadsetIconManager>();
 
     int pageIndex;
     TestGroup data;
@@ -58,7 +60,7 @@ public class ApplicationManager : MonoBehaviour
             for (int i = pageInfos.Count; i < numberOfTester; i++)
             {
                 pageInfos.Add(new UserInfo());
-                pageInfos[i].questID = "Oculus Quest " + (i + 1);
+                pageInfos[i].questID = i + 1;
             }
 
             Next();
@@ -98,7 +100,7 @@ public class ApplicationManager : MonoBehaviour
         {
             questPage.SetActive(true);
 
-            questIDField.text = pageInfos[pageIndex - 1].questID;
+            questIDField.text = "Oculus Quest " + pageInfos[pageIndex - 1].questID;
             userIDField.text = pageInfos[pageIndex - 1].userID == "" ? "" : pageInfos[pageIndex - 1].userID;
             groupIDField.SetSwitch(pageInfos[pageIndex - 1].groupID != "B");
         }
@@ -135,17 +137,20 @@ public class ApplicationManager : MonoBehaviour
         canStart = true;
         Post();
         endPage.SetActive(false);
-        foreach(UserInfo pageInfo in pageInfos)
+        foreach (UserInfo pageInfo in pageInfos)
+        {
             questsOnline.Add(pageInfo.questID, false);
+            HeadsetIconManager headset = Instantiate(iconPrefab, iconParent);
+            headsetIcons.Add(headset);
+            headset.Initialize(pageInfo.questID);
+        }
 
-        waitingText.text = $"(0/{questsOnline.Count}) Quests Online. ";
         questOnlinePanel.SetActive(true);
         StartCoroutine(WaitForCallback());
     }
 
     IEnumerator WaitForCallback()
     {
-        int dotCounter = 0;
         for (; ; )
         {
             yield return new WaitForSeconds(1);
@@ -156,29 +161,10 @@ public class ApplicationManager : MonoBehaviour
             foreach(UserInfo user in data.users)
             {
                 if (questsOnline[user.questID] != true)
+                {
                     questsOnline[user.questID] = user.questReady;
-            }
-
-            int count = 0;
-            foreach(KeyValuePair<string, bool> keyValuePair in questsOnline)
-            {
-                if (keyValuePair.Value)
-                    count++;
-            }
-
-            dotCounter = dotCounter.IncrementLoop(2);
-
-            switch (dotCounter)
-            {
-                case 0:
-                    waitingText.text = $"({count}/{questsOnline.Count}) Quests Online. ";
-                    break;
-                case 1:
-                    waitingText.text = $"({count}/{questsOnline.Count}) Quests Online.. ";
-                    break;
-                case 2:
-                    waitingText.text = $"({count}/{questsOnline.Count}) Quests Online... ";
-                    break;
+                    headsetIcons[user.questID - 1].Ready(user.questReady);
+                }
             }
 
             if (!questsOnline.ContainsValue(false))
@@ -225,8 +211,12 @@ public class ApplicationManager : MonoBehaviour
     private void Reset()
     {
         questsOnline.Clear();
+        foreach (HeadsetIconManager headset in headsetIcons)
+            Destroy(headset.gameObject);
+        headsetIcons.Clear();
         pageInfos.Clear();
         canStart = false;
+        pageIndex = 0;
         Post();
     }
 
@@ -246,7 +236,7 @@ public class TestGroup
 [Serializable]
 public class UserInfo
 {
-    public string questID;
+    public int questID;
     public string userID;
     public string groupID;
     public bool questReady;
