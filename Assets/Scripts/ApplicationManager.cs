@@ -188,7 +188,7 @@ public class ApplicationManager : MonoBehaviour
         }
         catch (WebException e)
         {
-            Debug.LogError(e.Message);
+            Debug.LogError($"This was caused when getting {e.Message} {e.Status}");
         }
     }
 
@@ -204,7 +204,7 @@ public class ApplicationManager : MonoBehaviour
         }
         catch (WebException e)
         {
-            Debug.LogError(e.Message);
+            Debug.LogError($"This was caused when posting {e.Message} {e.Status}");
         }
     }
 
