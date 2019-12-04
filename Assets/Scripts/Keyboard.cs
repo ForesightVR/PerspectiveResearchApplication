@@ -14,8 +14,10 @@ public class Keyboard : MonoBehaviour
 
     private void Awake()
     {
+        #if UNITY_WEBGL
         foreach (Button button in inputKeys)
             button.onClick.AddListener(() => Type(button));
+        #endif
     }
 
     private void Update()
@@ -28,8 +30,10 @@ public class Keyboard : MonoBehaviour
     {
         get { return _InputField; }
         set {
+#if UNITY_WEBGL
             defaultKeyboard.SetActive(true);
             gameObject.SetActive(true);
+#endif
             _InputField = value;
         } 
     }
