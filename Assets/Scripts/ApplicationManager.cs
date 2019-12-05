@@ -25,6 +25,9 @@ public class ApplicationManager : MonoBehaviour
     public GameObject questOnlinePanel;
     public Transform iconParent;
     public HeadsetIconManager iconPrefab;
+    public GameObject networkErrorText;
+
+    public float networkErrorDelay = 30;
 
     const string MISSING_ID = "One or more userIDs were left empty!";
     const string DUPLICATE_ID = "One or more users have duplicate userIDs!";
@@ -38,11 +41,8 @@ public class ApplicationManager : MonoBehaviour
     int pageIndex;
     TestGroup data;
     bool canStart;
-
-    private void Start()
-    {
-        //Get();
-    }
+    Coroutine waitForResponse;
+    float responseStartTime;
 
     public void SetNumberOfTesters()
     {
@@ -146,16 +146,18 @@ public class ApplicationManager : MonoBehaviour
         }
 
         questOnlinePanel.SetActive(true);
-        StartCoroutine(WaitForCallback());
+        waitForResponse = StartCoroutine(WaitForCallback());
     }
 
     IEnumerator WaitForCallback()
     {
+        responseStartTime = Time.time;
         for (; ; )
         {
             yield return new WaitForSeconds(1);
+            if (Time.time - responseStartTime >= networkErrorDelay)
+                networkErrorText.SetActive(true);
 
-            //Read from google sheets here
             Get();
 
             if (data == null) yield break;
@@ -177,6 +179,7 @@ public class ApplicationManager : MonoBehaviour
         startPage.SetActive(true);
     }
 
+    //Reads data from the remote file
     void Get()
     {
         WebClient request = new WebClient();
@@ -193,6 +196,7 @@ public class ApplicationManager : MonoBehaviour
         }
     }
 
+    //sends data to the remote file
     void Post()
     {
         WebClient client = new WebClient();
@@ -209,16 +213,36 @@ public class ApplicationManager : MonoBehaviour
         }
     }
 
+    public void CancelStart()
+    {
+        endPage.SetActive(true);
+        questOnlinePanel.SetActive(false);
+        networkErrorText.SetActive(false);
+        responseStartTime = 0;
+
+        if (waitForResponse != null)
+            StopCoroutine(waitForResponse);
+        
+        DestroyHeadsets();
+        canStart = false;
+        Post();
+    }
+
     private void Reset()
     {
         questsOnline.Clear();
-        foreach (HeadsetIconManager headset in headsetIcons)
-            Destroy(headset.gameObject);
-        headsetIcons.Clear();
+        DestroyHeadsets();
         pageInfos.Clear();
         canStart = false;
         pageIndex = 0;
         Post();
+    }
+
+    void DestroyHeadsets()
+    {
+        foreach (HeadsetIconManager headset in headsetIcons)
+            Destroy(headset.gameObject);
+        headsetIcons.Clear();
     }
 
     private void OnApplicationQuit()
