@@ -230,6 +230,7 @@ public class ApplicationManager : MonoBehaviour
 
     private void Reset()
     {
+        networkErrorText.SetActive(false);
         questsOnline.Clear();
         DestroyHeadsets();
         pageInfos.Clear();
