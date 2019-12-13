@@ -9,15 +9,15 @@ using OuterRimStudios.Utilities;
 
 public class ApplicationManager : MonoBehaviour
 {
+    public static ApplicationManager Instance;
     [Header("Start Page")]
     public GameObject startPage;
     public TMP_InputField testerCountField;
 
     [Space, Header("Quest Page")]
     public GameObject questPage;
-    public TextMeshProUGUI questIDField;
-    public TMP_InputField userIDField;
-    public SwitchManager groupIDField;
+    public QuestUser questUserPrefab;
+    public Transform contentTransform;
 
     [Space, Header("End Page")]
     public GameObject endPage;
@@ -34,7 +34,10 @@ public class ApplicationManager : MonoBehaviour
     const string URL = "ftp://ftpupload.net/htdocs/ProjectPerspective/appControl.json";
     NetworkCredential credential = new NetworkCredential("epiz_24876763", "Wr6f38F0XBubb");
 
+    //Parallel Lists
     List<UserInfo> pageInfos = new List<UserInfo>();
+    List<QuestUser> questUsers = new List<QuestUser>();
+
     Dictionary<int, bool> questsOnline = new Dictionary<int, bool>();
     List<HeadsetIconManager> headsetIcons = new List<HeadsetIconManager>();
 
@@ -44,89 +47,90 @@ public class ApplicationManager : MonoBehaviour
     Coroutine waitForResponse;
     float responseStartTime;
 
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     public void SetNumberOfTesters()
     {
         if (int.TryParse(testerCountField.text, out int numberOfTester))
         {
             if (numberOfTester <= 0) return;
 
-            if(numberOfTester < pageInfos.Count)
-            {
-                int count = pageInfos.Count - numberOfTester;
+            pageInfos.Clear();
 
-                for (int i = 0; i < count; i++)
-                    pageInfos.RemoveAt(pageInfos.Count - 1);
+            if (questUsers.Count > 0)
+            {
+                foreach (QuestUser questUser in questUsers)
+                    Destroy(questUser.gameObject);
+
+                questUsers.Clear();
             }
-            for (int i = pageInfos.Count; i < numberOfTester; i++)
+
+            for (int i = 0; i < numberOfTester; i++)
             {
                 pageInfos.Add(new UserInfo());
                 pageInfos[i].questID = i + 1;
+                pageInfos[i].groupID = "A";
+                QuestUser questUser = Instantiate(questUserPrefab, contentTransform);
+                questUsers.Add(questUser);
             }
 
-            Next();
-        }
-    }
-
-    public void Next()
-    {
-        SaveFields();
-        pageIndex = pageIndex.IncrementClamped(pageInfos.Count + 1);
-        SetUpPage();
-    }
-
-    public void Previous()
-    {
-        SaveFields();
-        pageIndex = pageIndex.DecrementClamped();
-        SetUpPage();
-    }
-
-    void SaveFields()
-    {
-        if(pageIndex != 0 && pageIndex != pageInfos.Count + 1)
-        {
-            pageInfos[pageIndex - 1].userID = userIDField.text;
-            pageInfos[pageIndex - 1].groupID = groupIDField.isOn ? "A" : "B";
-            pageInfos[pageIndex - 1].questReady = false;
-        }
-    }
-
-    void SetUpPage()
-    {
-        startPage.SetActive(pageIndex == 0);
-        endPage.SetActive(pageIndex == pageInfos.Count + 1);
-
-        if (!startPage.activeInHierarchy && !endPage.activeInHierarchy)
-        {
-            questPage.SetActive(true);
-
-            questIDField.text = "Oculus Quest " + pageInfos[pageIndex - 1].questID;
-            userIDField.text = pageInfos[pageIndex - 1].userID == "" ? "" : pageInfos[pageIndex - 1].userID;
-            groupIDField.SetSwitch(pageInfos[pageIndex - 1].groupID != "B");
-        }
-        else
-            questPage.SetActive(false);
-
-        if(endPage.activeInHierarchy)
-        {
-            foreach(UserInfo pageInfo in pageInfos)
+            for (int i = 0; i < questUsers.Count; i++)
             {
-                if (pageInfo.userID == "")
-                {
-                    warning.text = MISSING_ID;
-                    warning.gameObject.SetActive(true);
-                    break;
-                }
+                questUsers[i].questIDField.text = "Oculus Quest " + pageInfos[i].questID;
+                questUsers[i].userIDField.text = pageInfos[i].userID == "" ? "" : pageInfos[i].userID;
+                questUsers[i].groupIDField.SetSwitch(true);
+            }
+        }
+    }
 
-                foreach(UserInfo _pageInfo in pageInfos)
+    public void SaveFields()
+    {
+        Debug.Log("Save Fields");
+        for(int i = 0; i < questUsers.Count; i++)
+        {
+            pageInfos[i].userID = questUsers[i].userIDField.text;
+            pageInfos[i].groupID = questUsers[i].groupIDField.isOn ? "A" : "B";
+            pageInfos[i].questReady = false;
+        }
+    }
+
+    public void SetGroups()
+    {
+        for (int i = 0; i < questUsers.Count; i++)
+            questUsers[i].groupIDField.SetSwitch(pageInfos[i].groupID == "A" ? true : false);
+    }
+
+    public void CheckUsers()
+    {
+        Debug.LogError("Checking Users");
+        bool isMissing = false;
+        foreach (UserInfo pageInfo in pageInfos)
+        {
+            if (pageInfo.userID == "" || pageInfo.userID == null)
+            {
+                isMissing = true;
+                break;
+            }
+            else
+                Debug.Log(pageInfo.userID);
+
+            foreach (UserInfo _pageInfo in pageInfos)
+            {
+                if (pageInfo != _pageInfo && pageInfo.userID == _pageInfo.userID)
                 {
-                    if (pageInfo != _pageInfo && pageInfo.userID == _pageInfo.userID)
-                    {
-                        warning.text = DUPLICATE_ID;
-                        warning.gameObject.SetActive(true);
-                    }
+                    warning.text = DUPLICATE_ID;
+                    warning.gameObject.SetActive(true);
                 }
             }
+        }
+
+        if (isMissing)
+        {
+            warning.text = MISSING_ID;
+            warning.gameObject.SetActive(true);
         }
         else
             warning.gameObject.SetActive(false);
@@ -139,7 +143,11 @@ public class ApplicationManager : MonoBehaviour
         endPage.SetActive(false);
         foreach (UserInfo pageInfo in pageInfos)
         {
-            questsOnline.Add(pageInfo.questID, false);
+            if (questsOnline.ContainsKey(pageInfo.questID))
+                questsOnline[pageInfo.questID] = false;
+            else
+                questsOnline.Add(pageInfo.questID, false);
+
             HeadsetIconManager headset = Instantiate(iconPrefab, iconParent);
             headsetIcons.Add(headset);
             headset.Initialize(pageInfo.questID);
@@ -234,6 +242,12 @@ public class ApplicationManager : MonoBehaviour
         questsOnline.Clear();
         DestroyHeadsets();
         pageInfos.Clear();
+
+        foreach (QuestUser questUser in questUsers)
+            Destroy(questUser.gameObject);
+
+        questUsers.Clear();
+
         canStart = false;
         pageIndex = 0;
         Post();
