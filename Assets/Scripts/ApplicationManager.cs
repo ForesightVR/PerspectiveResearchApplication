@@ -264,6 +264,10 @@ public class ApplicationManager : MonoBehaviour
     {
         Reset();
     }
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        Reset();
+    }
 }
 
 [Serializable]
